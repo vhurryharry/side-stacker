@@ -1,0 +1,50 @@
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+*.swp
+
+# Django
+*.log
+*.pot
+*.pyc
+*.pyo
+*.db
+*.sqlite3
+media/
+static/
+
+# Virtual Environment
+venv/
+.env/
+.venv/
+env/
+ENV/
+
+# Django migrations
+*/migrations/*
+!*/migrations/__init__.py
+
+# Celery Beat and logs
+celerybeat-schedule
+celerybeat.pid
+
+# VSCode or JetBrains IDEs
+.vscode/
+.idea/
+
+# MacOS specific
+.DS_Store
+
+# Linux specific
+*~
+
+# Windows specific
+Thumbs.db
+ehthumbs.db
+
+# Database
+*.sqlite3
+*.db

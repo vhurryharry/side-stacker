@@ -39,7 +39,7 @@ export const makeMove =
           gameId,
           board,
           currentTurn,
-          currentGameStatus: winner ? GameStatus.COMPLETED : GameStatus.IN_PROGRESS,
+          currentGameStatus: winner ? GameStatus.FINISHED : GameStatus.IN_PROGRESS,
           moveHistory: [], // Update this if the API returns move history
         })
       )

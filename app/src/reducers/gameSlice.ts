@@ -87,7 +87,7 @@ const gameSlice = createSlice({
     },
     setWinner: (state, action: PayloadAction<number>) => {
       state.winner = action.payload
-      state.currentGameStatus = GameStatus.COMPLETED
+      state.currentGameStatus = GameStatus.FINISHED
     },
     resetGame: () => initialState,
   },
