@@ -4,7 +4,7 @@ import Game from './pages/Game/Game'
 
 function App() {
   return (
-    <>
+    <div className="app">
       <h1>Side Stacker Game</h1>
       <Router>
         <Routes>
@@ -12,7 +12,7 @@ function App() {
           <Route path="/game" element={<Game />} />
         </Routes>
       </Router>
-    </>
+    </div>
   )
 }
 
