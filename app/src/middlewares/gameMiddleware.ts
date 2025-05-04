@@ -70,8 +70,8 @@ export const makeMove =
 export const fetchAvailableGames = () => async (dispatch: AppDispatch) => {
   dispatch(initApiCall())
   try {
-    const response = await api.get<GameInfo[]>('/game/list')
-    dispatch(setGames(response.data))
+    const response = await api.get<{ games: GameInfo[] }>('/game/list')
+    dispatch(setGames(response.data?.games || []))
   } catch (error) {
     dispatch(apiCallFailure(error as string))
     console.error('Failed to load available games:', error)

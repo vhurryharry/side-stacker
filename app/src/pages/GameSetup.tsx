@@ -9,14 +9,17 @@ const GameSetup: React.FC = () => {
   const [entry, setEntry] = React.useState<GameEntry>()
   const [mode, setMode] = React.useState<GameMode>()
   const [difficulty, setDifficulty] = React.useState<BotDifficulty>()
+  const [gameId, setGameId] = React.useState<string>()
 
   useEffect(() => {
     setMode(undefined)
     setDifficulty(undefined)
+    setGameId(undefined)
   }, [entry])
 
   useEffect(() => {
     setDifficulty(undefined)
+    setGameId(undefined)
   }, [mode])
 
   return (
@@ -29,7 +32,7 @@ const GameSetup: React.FC = () => {
         {entry && (
           <div className="flex-1 mx-8 min-w-2xs">
             {entry === GameEntry.CREATE && <GameModeSelector mode={mode} onSelect={setMode} />}
-            {entry === GameEntry.JOIN && <GameList onSelect={() => {}} />}
+            {entry === GameEntry.JOIN && <GameList onSelect={setGameId} gameId={gameId} />}
           </div>
         )}
 

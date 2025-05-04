@@ -5,9 +5,10 @@ import { AppDispatch, RootState } from '../store'
 
 interface IProps {
   onSelect: (gameId: string) => void
+  gameId?: string
 }
 
-const GameList: React.FC<IProps> = ({ onSelect }: IProps) => {
+const GameList: React.FC<IProps> = ({ onSelect, gameId }: IProps) => {
   const dispatch = useDispatch<AppDispatch>()
   const { loading, error, games } = useSelector((state: RootState) => state.game)
 
@@ -23,7 +24,11 @@ const GameList: React.FC<IProps> = ({ onSelect }: IProps) => {
       {error && <p className="text-red-500">{error}</p>}
       {games && games.length > 0 ? (
         games.map((game) => (
-          <button key={game.id} className="btn my-3" onClick={() => onSelect(game.id)}>
+          <button
+            key={game.id}
+            className={`btn my-3 ${gameId === game.id && 'selected'}`}
+            onClick={() => onSelect(game.id)}
+          >
             {game.creator}
           </button>
         ))

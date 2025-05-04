@@ -49,11 +49,11 @@ def join_game(request, game_id):
 @api_view(["GET"])
 def list_available_games(request):
     # Get all games that are in the WAITING state and have only one player (player2 is not set)
-    available_games = Game.objects.filter(status=GameStatus.WAITING, player2="AI")
+    available_games = Game.objects.filter(status=GameStatus.WAITING, mode=GameMode.PVP)
     
     # Prepare a list of game IDs and their creator's name
     game_list = [
-        {"id": game.game_id, "creator": game.player1}
+        {"id": game.id, "creator": game.player1}
         for game in available_games
     ]
     
