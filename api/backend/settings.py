@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'channels',
     'backend',  # Your app's name
+    'game.apps.GameConfig',  # Your app's name
 ]
 
 MIDDLEWARE = [

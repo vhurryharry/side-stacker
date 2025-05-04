@@ -1,17 +1,19 @@
+from django.db.models import TextChoices
 
-from enum import Enum
 
-class GameStatus(str, Enum):
-    WAITING = 'waiting'
-    IN_PROGRESS = 'in_progress'
-    FINISHED = 'finished'
+class GameStatus(TextChoices):
+    WAITING = 'waiting', 'Waiting'
+    IN_PROGRESS = 'in_progress', 'In Progress'
+    FINISHED = 'finished', 'Finished'
 
-class GameMode(str, Enum):
-    PVP = 'pvp'
-    PVB = 'pvb'
-    BVB = 'bvb'
 
-class BotDifficulty(str, Enum):
-    EASY = 'easy'
-    MEDIUM = 'medium'
-    HARD = 'hard'
+class GameMode(TextChoices):
+    PVP = 'pvp', 'Player vs Player'
+    PVB = 'pvb', 'Player vs Bot'
+    BVB = 'bvb', 'Bot vs Bot'
+
+
+class BotDifficulty(TextChoices):
+    EASY = 'easy', 'Easy'
+    MEDIUM = 'medium', 'Medium'
+    HARD = 'hard', 'Hard'

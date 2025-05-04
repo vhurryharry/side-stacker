@@ -1,82 +1,16 @@
 import random
 import torch
-import numpy as np
 from .models import SideStackerModel
+from .game_utils import get_valid_moves, apply_move, check_winner
+from .constants import BOARD_SIZE, NUM_ACTIONS
 
-# Constants
-BOARD_SIZE = 7
-NUM_ACTIONS = BOARD_SIZE * 2
-
-# --- AI Model ---
-class SideStackerModel(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.fc1 = nn.Linear(BOARD_SIZE * BOARD_SIZE, 128)
-        self.fc2 = nn.Linear(128, 64)
-        self.fc3 = nn.Linear(64, NUM_ACTIONS)
-
-    def forward(self, x):
-        x = x.view(-1, BOARD_SIZE * BOARD_SIZE)
-        x = torch.relu(self.fc1(x))
-        x = torch.relu(self.fc2(x))
-        return self.fc3(x)
-
-# --- AI Functions ---
 def encode_board(board):
     return torch.tensor(board, dtype=torch.float32).unsqueeze(0)
-
-def get_valid_moves(board):
-    valid_moves = []
-    for row in range(BOARD_SIZE):
-        if board[row][0] == 0:
-            valid_moves.append((row, 'L'))
-        if board[row][-1] == 0:
-            valid_moves.append((row, 'R'))
-    return valid_moves
-
-def apply_move(board, row, direction, player):
-    board = [list(r) for r in board]
-    if direction == 'L':
-        for col in range(BOARD_SIZE):
-            if board[row][col] == 0:
-                board[row][col] = player
-                break
-    else:
-        for col in reversed(range(BOARD_SIZE)):
-            if board[row][col] == 0:
-                board[row][col] = player
-                break
-    return board
-
-def check_winner(board):
-    def check_line(line):
-        for i in range(len(line) - 3):
-            window = line[i:i+4]
-            if sum(window) == 4:
-                return 1
-            elif sum(window) == -4:
-                return -1
-        return 0
-
-    for row in board:
-        if (res := check_line(row)) != 0:
-            return res
-    for col in zip(*board):
-        if (res := check_line(col)) != 0:
-            return res
-    for d in range(-BOARD_SIZE + 1, BOARD_SIZE):
-        diag1 = [board[i][i - d] for i in range(max(d, 0), min(BOARD_SIZE + d, BOARD_SIZE)) if 0 <= i - d < BOARD_SIZE]
-        diag2 = [board[i][BOARD_SIZE - 1 - i + d] for i in range(max(-d, 0), min(BOARD_SIZE - d, BOARD_SIZE)) if 0 <= BOARD_SIZE - 1 - i + d < BOARD_SIZE]
-        if (res := check_line(diag1)) != 0:
-            return res
-        if (res := check_line(diag2)) != 0:
-            return res
-    return 0
 
 def get_q_target(q_values, action_idx, reward, next_q_values, done):
     return reward if done else reward + 0.9 * torch.max(next_q_values).item()
 
-def train_bvb(model, episodes=1000):
+def train_bvb(model: SideStackerModel, episodes=1000):
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     loss_fn = torch.nn.MSELoss()
 

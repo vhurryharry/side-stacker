@@ -1,7 +1,9 @@
-from django.http import JsonResponse
+from django.http import JsonResponse 
 from rest_framework.decorators import api_view
-from .models import Game
-from .ai import SideStackerModel, get_ai_move, apply_move, check_winner, get_valid_moves, encode_board
+from .models import Game, SideStackerModel
+from .game_utils import get_valid_moves, check_winner
+from .ai_move import get_ai_move
+from .enums import GameMode, GameStatus, BotDifficulty
 import random
 
 # Initialize AI model
@@ -10,12 +12,22 @@ model = SideStackerModel()
 # Create a new game
 @api_view(["POST"])
 def create_game(request):
-    game_id = str(random.randint(1000, 9999))  # Unique game ID
-    player1_name = request.GET.get('player1_name', 'Player 1')
-    game = Game(game_id=game_id, player1_name=player1_name, player2_name="AI", current_turn=1)
-    game.initialize_game()
+    player1 = request.GET.get('player1', 'Player 1')
+    mode = request.GET.get('mode', GameMode.PVP)
+
+    if mode not in GameMode.__members__.values():
+        return JsonResponse({"error": "Invalid game mode"}, status=400)
+
+    game = Game(
+        player1=player1,
+        player2="AI" if mode != GameMode.PVP else "",
+        mode=mode,
+        current_turn=1
+    )
     game.save()
-    return JsonResponse({"message": "Game created", "game_id": game_id})
+
+    return JsonResponse(game.serialize(), status=201)
+
 
 # Join an existing game
 @api_view(["POST"])
@@ -25,11 +37,28 @@ def join_game(request, game_id):
     except Game.DoesNotExist:
         return JsonResponse({"error": "Game not found"}, status=404)
 
-    game.player2_name = request.GET.get('player2_name', 'Player 2')
-    game.save()
-    return JsonResponse({"message": f"Game joined as {game.player2_name}"})
+    if game.mode != GameMode.PVP or game.player2:
+        return JsonResponse({"error": "Cannot join this game"}, status=400)
 
-# Get the current game state
+    game.player2 = request.GET.get('player2', 'Player 2')
+    game.save()
+    return JsonResponse(game.serialize(), status=200)
+
+# List available games
+@api_view(["GET"])
+def list_available_games(request):
+    # Get all games that are in the WAITING state and have only one player (player2 is not set)
+    available_games = Game.objects.filter(status=GameStatus.WAITING, player2="AI")
+    
+    # Prepare a list of game IDs and their creator's name
+    game_list = [
+        {"id": game.game_id, "creator": game.player1}
+        for game in available_games
+    ]
+    
+    return JsonResponse({"games": game_list})
+
+# Get game state
 @api_view(["GET"])
 def get_game_state(request, game_id):
     try:
@@ -37,9 +66,10 @@ def get_game_state(request, game_id):
     except Game.DoesNotExist:
         return JsonResponse({"error": "Game not found"}, status=404)
 
-    return JsonResponse({"board": game.board, "current_turn": game.current_turn})
+    return JsonResponse(game.serialize(), status=200)
 
-# Make a move (either by player or AI)
+
+# Make a move
 @api_view(["POST"])
 def make_move(request, game_id):
     try:
@@ -49,12 +79,17 @@ def make_move(request, game_id):
 
     row = int(request.GET.get('row'))
     direction = request.GET.get('direction')
-    if (row, direction) not in get_valid_moves(game.board):
+    board = game.get_board()
+
+    # Validate move
+    if (row, direction) not in get_valid_moves(board):
         return JsonResponse({"error": "Invalid move"}, status=400)
 
-    # Apply the player's move
+    # Apply the player's move (player 1 or player 2)
     game.apply_move(row, direction, game.current_turn)
-    winner = check_winner(game.board)
+    board = game.get_board()
+
+    winner = check_winner(board)
     if winner:
         return JsonResponse({"message": f"Player {winner} wins!"})
 
@@ -62,26 +97,21 @@ def make_move(request, game_id):
     game.current_turn = -game.current_turn
     game.save()
 
-    # AI Move if it's AI's turn
-    if game.current_turn == -1:
-        ai_move = get_ai_move(game.board)
+    # If it's bot's turn (PvB or BvB), let the bot play
+    if game.mode == GameMode.PVB and game.current_turn == -1:  # Player vs Bot, Bot's turn
+        ai_move = get_ai_move(board, difficulty=game.bot_difficulty)  # Bot's move
         game.apply_move(ai_move[0], ai_move[1], game.current_turn)
         game.save()
-        winner = check_winner(game.board)
+        winner = check_winner(board)
+        if winner:
+            return JsonResponse({"message": f"Player {winner} wins!"})
+    elif game.mode == GameMode.BVB:  # Bot vs Bot, both players are bots
+        ai_move = get_ai_move(board, difficulty=BotDifficulty.HARD)  # You can modify difficulty for BvB
+        game.apply_move(ai_move[0], ai_move[1], game.current_turn)
+        game.save()
+        winner = check_winner(board)
         if winner:
             return JsonResponse({"message": f"Player {winner} wins!"})
 
-    return JsonResponse({"board": game.board})
-
-@api_view(["GET"])
-def get_ai_move(board):
-    valid_moves = get_valid_moves(board)
-    q_values = model(encode_board(board))
-    q_values = q_values.detach().numpy().squeeze()
-
-    # Epsilon-greedy choice (random or best)
-    if random.random() < 0.1:
-        return random.choice(valid_moves)
-    else:
-        best_move = max(valid_moves, key=lambda move: q_values[move[0] * 2 + (0 if move[1] == 'L' else 1)])
-        return best_move
+    # Return the current board state if no one wins yet
+    return JsonResponse({"board": board, "currentTurn": game.current_turn})
