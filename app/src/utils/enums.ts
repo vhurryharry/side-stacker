@@ -1,3 +1,8 @@
+export enum GameEntry {
+  CREATE = 'create',
+  JOIN = 'join',
+}
+
 export enum GameStatus {
   WAITING = 'waiting',
   IN_PROGRESS = 'in_progress',

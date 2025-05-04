@@ -7,8 +7,9 @@ import {
   setWinner,
   initApiCall,
   setGames,
+  makeMove as reduxMakeMove,
 } from '../reducers/gameSlice'
-import { BotDifficulty, GameMode, GameStatus } from '../utils/enums'
+import { BotDifficulty, GameMode } from '../utils/enums'
 import { GameInfo } from '../utils/types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/game'
@@ -49,6 +50,14 @@ export const makeMove =
       dispatch(setGameState(game))
       if (winner) {
         dispatch(setWinner(winner))
+      }
+      if (aiMove) {
+        dispatch(
+          reduxMakeMove({
+            row: aiMove.row,
+            direction: aiMove.direction,
+          })
+        )
       }
     } catch (error) {
       dispatch(apiCallFailure(error as string))
