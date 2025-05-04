@@ -4,7 +4,8 @@ from .models import Game, SideStackerModel
 from .game_utils import get_valid_moves, check_winner
 from .ai_move import get_ai_move
 from .enums import GameMode, GameStatus, BotDifficulty
-import random
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 # Initialize AI model
 model = SideStackerModel()
@@ -96,6 +97,23 @@ def make_move(request, game_id):
     # Switch turn
     game.current_turn = -game.current_turn
     game.save()
+
+    if game.mode == GameMode.PVP:
+        # Notify both players about the move
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"game_{game_id}",
+            {
+                "type": "game_update",
+                "message": {
+                    "type": "move",
+                    "row": row,
+                    "side": direction,
+                    "board": board,
+                    "currentTurn": game.current_turn,
+                },
+            },
+        )
 
     # If it's bot's turn (PvB or BvB), let the bot play
     if game.mode == GameMode.PVB and game.current_turn == -1:  # Player vs Bot, Bot's turn
