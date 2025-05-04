@@ -3,3 +3,8 @@ export interface GameMove {
   direction: 'L' | 'R'
   player: number
 }
+
+export interface GameInfo {
+  id: string
+  creator: string
+}

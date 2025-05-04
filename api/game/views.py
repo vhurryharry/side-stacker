@@ -92,10 +92,10 @@ def make_move(request, game_id):
 
     winner = check_winner(board)
     if winner:
-        return JsonResponse({"message": f"Player {winner} wins!"})
-
-    # Switch turn
-    game.current_turn = -game.current_turn
+        game.status = GameStatus.FINISHED
+    else:
+        # Switch turn
+        game.current_turn = -game.current_turn
     game.save()
 
     if game.mode == GameMode.PVP:
@@ -115,21 +115,29 @@ def make_move(request, game_id):
             },
         )
 
-    # If it's bot's turn (PvB or BvB), let the bot play
-    if game.mode == GameMode.PVB and game.current_turn == -1:  # Player vs Bot, Bot's turn
-        ai_move = get_ai_move(board, difficulty=game.bot_difficulty)  # Bot's move
-        game.apply_move(ai_move[0], ai_move[1], game.current_turn)
-        game.save()
+    ai_move = None
+    if game.status != GameStatus.FINISHED:
+        # If it's bot's turn (PvB or BvB), let the bot play
+        if game.mode == GameMode.PVB and game.current_turn == -1:  # Player vs Bot, Bot's turn
+            ai_move = get_ai_move(board, difficulty=game.bot_difficulty)  # Bot's move
+            game.apply_move(ai_move[0], ai_move[1], game.current_turn)
+        elif game.mode == GameMode.BVB:  # Bot vs Bot, both players are bots
+            ai_move = get_ai_move(board, difficulty=BotDifficulty.HARD)  # You can modify difficulty for BvB
+            game.apply_move(ai_move[0], ai_move[1], game.current_turn)
+        
+        board = game.get_board()
         winner = check_winner(board)
         if winner:
-            return JsonResponse({"message": f"Player {winner} wins!"})
-    elif game.mode == GameMode.BVB:  # Bot vs Bot, both players are bots
-        ai_move = get_ai_move(board, difficulty=BotDifficulty.HARD)  # You can modify difficulty for BvB
-        game.apply_move(ai_move[0], ai_move[1], game.current_turn)
+            game.status = GameStatus.FINISHED
+
         game.save()
-        winner = check_winner(board)
-        if winner:
-            return JsonResponse({"message": f"Player {winner} wins!"})
 
     # Return the current board state if no one wins yet
-    return JsonResponse({"board": board, "currentTurn": game.current_turn})
+    return JsonResponse({
+        "game": game.serialize(),
+        "aiMove": {
+            "row": ai_move[0],
+            "side": ai_move[1],
+        } if ai_move else None,
+        "winner": winner if winner else None,
+    })

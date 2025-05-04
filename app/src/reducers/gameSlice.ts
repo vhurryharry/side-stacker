@@ -1,27 +1,44 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { BotDifficulty, GameMode, GameStatus } from '../utils/enums'
-import { GameMove } from '../utils/types'
+import { GameInfo, GameMove } from '../utils/types'
 
 interface GameState {
-  gameId: string
-  currentGameStatus: GameStatus
+  // Current game information
+  id: string
   moveHistory: GameMove[]
-  gameMode: GameMode
+  status: GameStatus
+  mode: GameMode
   botDifficulty: BotDifficulty
   board: number[][]
   currentTurn: number
   winner: number | null
+  player1: string | null
+  player2: string | null
+
+  // List of available games
+  games: GameInfo[]
+
+  // Loading and error states
+  loading: boolean
+  error: string | null
 }
 
 const initialState: GameState = {
-  gameId: '',
-  currentGameStatus: GameStatus.WAITING,
+  id: '',
+  status: GameStatus.WAITING,
   moveHistory: [],
-  gameMode: GameMode.PVP,
+  mode: GameMode.PVP,
   botDifficulty: BotDifficulty.MEDIUM,
   board: Array(7).fill(Array(7).fill(0)),
   currentTurn: 1, // Player 1 starts
   winner: null,
+  player1: null,
+  player2: null,
+
+  games: [],
+
+  loading: false,
+  error: null,
 }
 
 const gameSlice = createSlice({
@@ -31,15 +48,15 @@ const gameSlice = createSlice({
     startGame: (
       state,
       action: PayloadAction<{
-        gameId: string
-        gameMode: GameMode
+        id: string
+        mode: GameMode
         botDifficulty?: BotDifficulty
       }>
     ) => {
-      state.gameId = action.payload.gameId
-      state.currentGameStatus = GameStatus.IN_PROGRESS
-      state.gameMode = action.payload.gameMode
-      if (action.payload.gameMode === GameMode.PVB) {
+      state.id = action.payload.id
+      state.status = GameStatus.IN_PROGRESS
+      state.mode = action.payload.mode
+      if (action.payload.mode === GameMode.PVB) {
         state.botDifficulty = action.payload.botDifficulty || BotDifficulty.MEDIUM
       }
       state.moveHistory = []
@@ -72,26 +89,59 @@ const gameSlice = createSlice({
     setGameState: (
       state,
       action: PayloadAction<{
-        gameId: string
+        id: string
         board: number[][]
         currentTurn: number
-        currentGameStatus: GameStatus
+        status: GameStatus
+        mode: GameMode
+        botDifficulty: BotDifficulty
+        player1: string | null
+        player2: string | null
         moveHistory: GameMove[]
       }>
     ) => {
-      state.gameId = action.payload.gameId
-      state.board = action.payload.board
+      state.id = action.payload.id
+      state.board = action.payload.board || state.board
       state.currentTurn = action.payload.currentTurn
-      state.currentGameStatus = action.payload.currentGameStatus
-      state.moveHistory = action.payload.moveHistory
+      state.status = action.payload.status
+      state.mode = action.payload.mode
+      state.botDifficulty = action.payload.botDifficulty
+      state.player1 = action.payload.player1
+      state.player2 = action.payload.player2
+      state.moveHistory = action.payload.moveHistory || state.moveHistory
     },
     setWinner: (state, action: PayloadAction<number>) => {
       state.winner = action.payload
-      state.currentGameStatus = GameStatus.FINISHED
+      state.status = GameStatus.FINISHED
     },
     resetGame: () => initialState,
+    setGames: (state, action: PayloadAction<GameInfo[]>) => {
+      state.games = action.payload
+    },
+
+    initApiCall: (state) => {
+      state.loading = true
+      state.error = null
+    },
+    finishApiCall: (state) => {
+      state.loading = false
+    },
+    apiCallFailure: (state, action: PayloadAction<string>) => {
+      state.loading = false
+      state.error = action.payload
+    },
   },
 })
 
-export const { startGame, makeMove, setGameState, setWinner, resetGame } = gameSlice.actions
+export const {
+  startGame,
+  makeMove,
+  setGameState,
+  setWinner,
+  resetGame,
+  setGames,
+  initApiCall,
+  finishApiCall,
+  apiCallFailure,
+} = gameSlice.actions
 export default gameSlice.reducer
