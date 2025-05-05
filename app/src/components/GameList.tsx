@@ -26,7 +26,7 @@ const GameList: React.FC<IProps> = ({ onSelect, gameId }: IProps) => {
         games.map((game) => (
           <button
             key={game.id}
-            className={`btn my-3 ${gameId === game.id && 'selected'}`}
+            className={`btn my-1 ${gameId === game.id && 'selected'}`}
             onClick={() => onSelect(game.id)}
           >
             {game.creator}

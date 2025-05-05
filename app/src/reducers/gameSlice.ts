@@ -11,6 +11,7 @@ interface GameState {
   botDifficulty: BotDifficulty
   board: number[][]
   currentTurn: number
+  myTurn: number
   winner: number | null
   player1: string | null
   player2: string | null
@@ -31,6 +32,7 @@ const initialState: GameState = {
   botDifficulty: BotDifficulty.MEDIUM,
   board: Array(7).fill(Array(7).fill(0)),
   currentTurn: 1, // Player 1 starts
+  myTurn: 1, // I'm player 1
   winner: null,
   player1: null,
   player2: null,
@@ -92,6 +94,7 @@ const gameSlice = createSlice({
         id: string
         board: number[][]
         currentTurn: number
+        myTurn: number
         status: GameStatus
         mode: GameMode
         botDifficulty: BotDifficulty
@@ -100,15 +103,19 @@ const gameSlice = createSlice({
         moveHistory: GameMove[]
       }>
     ) => {
-      state.id = action.payload.id
-      state.board = action.payload.board || state.board
-      state.currentTurn = action.payload.currentTurn
-      state.status = action.payload.status
-      state.mode = action.payload.mode
-      state.botDifficulty = action.payload.botDifficulty
-      state.player1 = action.payload.player1
-      state.player2 = action.payload.player2
-      state.moveHistory = action.payload.moveHistory || state.moveHistory
+      state = {
+        ...state,
+        id: action.payload.id,
+        board: action.payload.board || state.board,
+        currentTurn: action.payload.currentTurn,
+        myTurn: action.payload.myTurn,
+        status: action.payload.status,
+        mode: action.payload.mode,
+        botDifficulty: action.payload.botDifficulty,
+        player1: action.payload.player1,
+        player2: action.payload.player2,
+        moveHistory: action.payload.moveHistory || state.moveHistory,
+      }
     },
     setWinner: (state, action: PayloadAction<number>) => {
       state.winner = action.payload

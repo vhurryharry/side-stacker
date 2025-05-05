@@ -13,8 +13,9 @@ model = SideStackerModel()
 # Create a new game
 @api_view(["POST"])
 def create_game(request):
-    player1 = request.GET.get('player1', 'Player 1')
-    mode = request.GET.get('mode', GameMode.PVP)
+    player1 = request.data.get('playerName', 'Player 1')
+    mode = request.data.get('mode', GameMode.PVP)
+    difficulty = request.data.get('difficulty', BotDifficulty.MEDIUM)
 
     if mode not in GameMode.__members__.values():
         return JsonResponse({"error": "Invalid game mode"}, status=400)
@@ -23,6 +24,7 @@ def create_game(request):
         player1=player1,
         player2="AI" if mode != GameMode.PVP else "",
         mode=mode,
+        bot_difficulty=difficulty,
         current_turn=1
     )
     game.save()
@@ -41,7 +43,7 @@ def join_game(request, game_id):
     if game.mode != GameMode.PVP or game.player2:
         return JsonResponse({"error": "Cannot join this game"}, status=400)
 
-    game.player2 = request.GET.get('player2', 'Player 2')
+    game.player2 = request.data.get('playerName', 'Player 2')
     game.save()
     return JsonResponse(game.serialize(), status=200)
 
@@ -78,8 +80,8 @@ def make_move(request, game_id):
     except Game.DoesNotExist:
         return JsonResponse({"error": "Game not found"}, status=404)
 
-    row = int(request.GET.get('row'))
-    direction = request.GET.get('direction')
+    row = int(request.data.get('row'))
+    direction = request.data.get('direction')
     board = game.get_board()
 
     # Validate move

@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'channels',
+    'corsheaders',
     'backend',  # Your app's name
     'game.apps.GameConfig',  # Your app's name
 ]
@@ -42,6 +43,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -124,4 +126,16 @@ CHANNEL_LAYERS = {
         # "BACKEND": "channels_redis.core.RedisChannelLayer",
         # "CONFIG": {"hosts": [("127.0.0.1", 6379)]},
     }
+}
+
+CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:5173']
+
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:5173",
+]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.BasicAuthentication',
+    )
 }
