@@ -36,7 +36,7 @@ def create_game(request):
 @api_view(["POST"])
 def join_game(request, game_id):
     try:
-        game = Game.objects.get(game_id=game_id)
+        game = Game.objects.get(id=game_id)
     except Game.DoesNotExist:
         return JsonResponse({"error": "Game not found"}, status=404)
 
@@ -44,7 +44,24 @@ def join_game(request, game_id):
         return JsonResponse({"error": "Cannot join this game"}, status=400)
 
     game.player2 = request.data.get('playerName', 'Player 2')
+    game.status = GameStatus.IN_PROGRESS
     game.save()
+
+    
+    if game.mode == GameMode.PVP:
+        # Notify both players about the move
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"game_{game_id}",
+            {
+                "type": "game_update",
+                "message": {
+                    "type": "player_join",
+                    "player2": game.player2
+                },
+            },
+        )
+
     return JsonResponse(game.serialize(), status=200)
 
 # List available games
@@ -76,7 +93,7 @@ def get_game_state(request, game_id):
 @api_view(["POST"])
 def make_move(request, game_id):
     try:
-        game = Game.objects.get(game_id=game_id)
+        game = Game.objects.get(id=game_id)
     except Game.DoesNotExist:
         return JsonResponse({"error": "Game not found"}, status=404)
 
@@ -113,6 +130,7 @@ def make_move(request, game_id):
                     "side": direction,
                     "board": board,
                     "currentTurn": game.current_turn,
+                    "winner": winner if winner else None,
                 },
             },
         )

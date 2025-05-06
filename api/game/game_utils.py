@@ -1,15 +1,27 @@
 from .constants import BOARD_SIZE
+from typing import List, Tuple
 
-def get_valid_moves(board):
+def get_valid_moves(board: List[List[int]]) -> List[Tuple[int, str]]:
     valid_moves = []
-    for row in range(BOARD_SIZE):
-        if board[row][0] == 0:
-            valid_moves.append((row, 'L'))
-        if board[row][-1] == 0:
-            valid_moves.append((row, 'R'))
+    for row_index, row in enumerate(board):
+        # Left to right
+        try:
+            left_index = row.index(0)
+            valid_moves.append((row_index, 'L'))
+        except ValueError:
+            pass  # No empty cell from left
+
+        # Right to left
+        try:
+            right_index = len(row) - 1 - row[::-1].index(0)
+            if right_index != left_index:
+                valid_moves.append((row_index, 'R'))
+        except ValueError:
+            pass  # No empty cell from right
+
     return valid_moves
 
-def apply_move(board, row, direction, player):
+def apply_move(board: List[List[int]], row: int, direction: str, player: str) -> List[List[int]]:
     board = [list(r) for r in board]
     if direction == 'L':
         for col in range(BOARD_SIZE):
@@ -23,8 +35,8 @@ def apply_move(board, row, direction, player):
                 break
     return board
 
-def check_winner(board):
-    def check_line(line):
+def check_winner(board: List[List[int]]):
+    def check_line(line: List[int]) -> int:
         for i in range(len(line) - 3):
             window = line[i:i+4]
             if sum(window) == 4:

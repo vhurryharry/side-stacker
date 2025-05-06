@@ -16,7 +16,7 @@ const GameSetup: React.FC = () => {
   const [gameId, setGameId] = React.useState<string>()
   const [playerName, setPlayerName] = React.useState<string>('')
 
-  const { id } = useSelector((state: RootState) => state.game)
+  const { id, loading } = useSelector((state: RootState) => state.game)
 
   const dispatch = useDispatch<AppDispatch>()
   const navigate = useNavigate()
@@ -49,10 +49,10 @@ const GameSetup: React.FC = () => {
   }
 
   useEffect(() => {
-    if (id) {
+    if (!loading && id) {
       navigate('/game')
     }
-  }, [id, navigate])
+  }, [loading, id, navigate])
 
   return (
     <div className="flex flex-col items-center w-max min-w-max h-1/2">

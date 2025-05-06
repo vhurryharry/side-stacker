@@ -6,7 +6,7 @@ import {
   setGameState,
   setWinner,
   initApiCall,
-  setGames,
+  setAvailableGames,
   makeMove as reduxMakeMove,
 } from '../reducers/gameSlice'
 import { BotDifficulty, GameMode } from '../utils/enums'
@@ -25,7 +25,7 @@ export const createGame =
   async (dispatch: AppDispatch) => {
     dispatch(initApiCall())
     try {
-      const response = await axios.post('/api/create/', {
+      const response = await api.post('/game/create/', {
         mode: gameMode,
         difficulty: botDifficulty,
         playerName,
@@ -47,7 +47,7 @@ export const createGame =
 export const joinGame = (playerName: string, gameId: string) => async (dispatch: AppDispatch) => {
   dispatch(initApiCall())
   try {
-    const response = await api.post(`/game/join/${gameId}/`, { playerName })
+    const response = await api.post(`/game/${gameId}/join/`, { playerName })
 
     dispatch(
       setGameState({
@@ -67,8 +67,7 @@ export const makeMove =
   (gameId: string, row: number, direction: 'L' | 'R') => async (dispatch: AppDispatch) => {
     dispatch(initApiCall())
     try {
-      const response = await api.post(`/game/move/`, {
-        gameId,
+      const response = await api.post(`/game/${gameId}/move/`, {
         row,
         direction,
       })
@@ -97,7 +96,7 @@ export const fetchAvailableGames = () => async (dispatch: AppDispatch) => {
   dispatch(initApiCall())
   try {
     const response = await api.get<{ games: GameInfo[] }>('/game/list')
-    dispatch(setGames(response.data?.games || []))
+    dispatch(setAvailableGames(response.data?.games || []))
   } catch (error) {
     dispatch(apiCallFailure(JSON.stringify(error)))
     console.error('Failed to load available games:', error)

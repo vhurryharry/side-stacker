@@ -47,22 +47,14 @@ const gameSlice = createSlice({
   name: 'game',
   initialState,
   reducers: {
-    startGame: (
-      state,
-      action: PayloadAction<{
-        id: string
-        mode: GameMode
-        botDifficulty?: BotDifficulty
-      }>
-    ) => {
-      state.id = action.payload.id
-      state.status = GameStatus.IN_PROGRESS
-      state.mode = action.payload.mode
-      if (action.payload.mode === GameMode.PVB) {
-        state.botDifficulty = action.payload.botDifficulty || BotDifficulty.MEDIUM
-      }
+    startGame: (state) => {
       state.moveHistory = []
       state.board = Array(7).fill(Array(7).fill(0))
+      state.status = GameStatus.IN_PROGRESS
+    },
+    joinGame: (state, action: PayloadAction<{ player2: string }>) => {
+      state.player2 = action.payload.player2
+      state.status = GameStatus.IN_PROGRESS
     },
     makeMove: (state, action: PayloadAction<{ row: number; direction: 'L' | 'R' }>) => {
       const { row, direction } = action.payload
@@ -94,35 +86,32 @@ const gameSlice = createSlice({
         id: string
         board: number[][]
         currentTurn: number
-        myTurn: number
         status: GameStatus
         mode: GameMode
         botDifficulty: BotDifficulty
         player1: string | null
         player2: string | null
         moveHistory: GameMove[]
+        myTurn?: number
       }>
     ) => {
-      state = {
-        ...state,
-        id: action.payload.id,
-        board: action.payload.board || state.board,
-        currentTurn: action.payload.currentTurn,
-        myTurn: action.payload.myTurn,
-        status: action.payload.status,
-        mode: action.payload.mode,
-        botDifficulty: action.payload.botDifficulty,
-        player1: action.payload.player1,
-        player2: action.payload.player2,
-        moveHistory: action.payload.moveHistory || state.moveHistory,
-      }
+      state.id = action.payload.id
+      state.board = action.payload.board || state.board
+      state.currentTurn = action.payload.currentTurn
+      state.status = action.payload.status
+      state.mode = action.payload.mode
+      state.botDifficulty = action.payload.botDifficulty
+      state.player1 = action.payload.player1
+      state.player2 = action.payload.player2
+      state.moveHistory = action.payload.moveHistory || state.moveHistory
+      state.myTurn = action.payload.myTurn || state.myTurn
     },
     setWinner: (state, action: PayloadAction<number>) => {
       state.winner = action.payload
       state.status = GameStatus.FINISHED
     },
     resetGame: () => initialState,
-    setGames: (state, action: PayloadAction<GameInfo[]>) => {
+    setAvailableGames: (state, action: PayloadAction<GameInfo[]>) => {
       state.games = action.payload
     },
 
@@ -142,11 +131,12 @@ const gameSlice = createSlice({
 
 export const {
   startGame,
+  joinGame,
   makeMove,
   setGameState,
   setWinner,
   resetGame,
-  setGames,
+  setAvailableGames,
   initApiCall,
   finishApiCall,
   apiCallFailure,
