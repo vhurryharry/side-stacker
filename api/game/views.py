@@ -110,7 +110,8 @@ def make_move(request, game_id):
     board = game.get_board()
 
     winner = check_winner(board)
-    if winner:
+    is_draw = len(get_valid_moves(board)) == 0
+    if winner or is_draw:
         game.status = GameStatus.FINISHED
     else:
         # Switch turn
@@ -131,6 +132,7 @@ def make_move(request, game_id):
                     "board": board,
                     "currentTurn": game.current_turn,
                     "winner": winner if winner else None,
+                    "isDraw": is_draw,
                 },
             },
         )
@@ -147,7 +149,9 @@ def make_move(request, game_id):
         
         board = game.get_board()
         winner = check_winner(board)
-        if winner:
+        is_draw = len(get_valid_moves(board)) == 0
+        
+        if winner or is_draw:
             game.status = GameStatus.FINISHED
 
         game.save()
@@ -160,4 +164,5 @@ def make_move(request, game_id):
             "side": ai_move[1],
         } if ai_move else None,
         "winner": winner if winner else None,
+        "isDraw": is_draw,
     })

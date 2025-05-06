@@ -12,7 +12,13 @@ import GameBoard from '../components/GameBoard'
 import { makeMove } from '../middlewares/gameMiddleware'
 import { GameMode, GameStatus } from '../utils/enums'
 import LoadingSpinner from '../components/LoadingSpinner'
-import { joinGame, setWinner, makeMove as reduxMakeMove } from '../reducers/gameSlice'
+import {
+  joinGame,
+  setWinner,
+  makeMove as reduxMakeMove,
+  setDraw,
+  resetGame,
+} from '../reducers/gameSlice'
 import { isValidMove } from '../utils/utils'
 
 const Game: React.FC = () => {
@@ -30,6 +36,7 @@ const Game: React.FC = () => {
     botDifficulty,
     status,
     board,
+    isDraw,
   } = useSelector((state: RootState) => state.game)
   const dispatch = useDispatch<AppDispatch>()
 
@@ -42,7 +49,7 @@ const Game: React.FC = () => {
         })
       )
     } else if (data.type === 'move') {
-      const { row, side, winner } = data
+      const { row, side, winner, isDraw } = data
       dispatch(
         reduxMakeMove({
           row,
@@ -52,6 +59,9 @@ const Game: React.FC = () => {
 
       if (winner) {
         dispatch(setWinner(winner))
+      }
+      if (isDraw) {
+        dispatch(setDraw())
       }
     }
   }
@@ -73,6 +83,12 @@ const Game: React.FC = () => {
     if (valid && direction) {
       dispatch(makeMove(id, row, direction))
     }
+  }
+
+  const closeGame = () => {
+    disconnectWebSocket()
+    dispatch(resetGame())
+    navigate('/')
   }
 
   return (
@@ -101,14 +117,19 @@ const Game: React.FC = () => {
           {winner && `Winner: ${winner === 1 ? player1 : player2}`}
         </div>
       )}
+      {isDraw && <div className="mt-4 text-2xl font-bold">It's a draw!</div>}
       <GameBoard
         board={board}
         currentTurn={currentTurn}
         onCellClick={onCellClick}
         myTurn={myTurn}
-        disabled={status !== GameStatus.IN_PROGRESS || winner !== null || myTurn !== currentTurn}
+        disabled={status !== GameStatus.IN_PROGRESS || myTurn !== currentTurn}
       />
-      <div className="controls">{/* Game controls (e.g., buttons) go here */}</div>
+      {status === GameStatus.FINISHED && (
+        <button onClick={closeGame} className="btn mt-8">
+          Back to Main Menu
+        </button>
+      )}
     </div>
   )
 }

@@ -11,10 +11,12 @@ interface GameState {
   botDifficulty: BotDifficulty
   board: number[][]
   currentTurn: number
-  myTurn: number
-  winner: number | null
   player1: string | null
   player2: string | null
+
+  myTurn: number
+  winner: number | null
+  isDraw: boolean | null
 
   // List of available games
   games: GameInfo[]
@@ -32,10 +34,12 @@ const initialState: GameState = {
   botDifficulty: BotDifficulty.MEDIUM,
   board: Array(7).fill(Array(7).fill(0)),
   currentTurn: 1, // Player 1 starts
-  myTurn: 1, // I'm player 1
-  winner: null,
   player1: null,
   player2: null,
+
+  myTurn: 1, // I'm player 1
+  winner: null,
+  isDraw: false,
 
   games: [],
 
@@ -110,6 +114,10 @@ const gameSlice = createSlice({
       state.winner = action.payload
       state.status = GameStatus.FINISHED
     },
+    setDraw: (state) => {
+      state.isDraw = true
+      state.status = GameStatus.FINISHED
+    },
     resetGame: () => initialState,
     setAvailableGames: (state, action: PayloadAction<GameInfo[]>) => {
       state.games = action.payload
@@ -135,6 +143,7 @@ export const {
   makeMove,
   setGameState,
   setWinner,
+  setDraw,
   resetGame,
   setAvailableGames,
   initApiCall,
