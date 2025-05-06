@@ -1,14 +1,11 @@
 from django.http import JsonResponse 
 from rest_framework.decorators import api_view
-from .models import Game, SideStackerModel
+from .models import Game
 from .game_utils import get_valid_moves, check_winner
 from .ai_move import get_ai_move
 from .enums import GameMode, GameStatus, BotDifficulty
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-
-# Initialize AI model
-model = SideStackerModel()
 
 # Create a new game
 @api_view(["POST"])
