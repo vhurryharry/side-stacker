@@ -60,21 +60,24 @@ const gameSlice = createSlice({
       state.player2 = action.payload.player2
       state.status = GameStatus.IN_PROGRESS
     },
-    makeMove: (state, action: PayloadAction<{ row: number; direction: 'L' | 'R' }>) => {
-      const { row, direction } = action.payload
+    makeMove: (
+      state,
+      action: PayloadAction<{ row: number; direction: 'L' | 'R'; turn?: number }>
+    ) => {
+      const { row, direction, turn } = action.payload
       const board = state.board.map((r) => [...r])
 
       if (direction === 'L') {
         for (let col = 0; col < 7; col++) {
           if (board[row][col] === 0) {
-            board[row][col] = state.currentTurn
+            board[row][col] = turn || state.currentTurn
             break
           }
         }
       } else {
         for (let col = 6; col >= 0; col--) {
           if (board[row][col] === 0) {
-            board[row][col] = state.currentTurn
+            board[row][col] = turn || state.currentTurn
             break
           }
         }
@@ -82,7 +85,7 @@ const gameSlice = createSlice({
 
       state.board = board
       state.moveHistory.push({ row, direction, player: state.currentTurn })
-      state.currentTurn = -state.currentTurn
+      state.currentTurn = turn ? -turn : -state.currentTurn
     },
     setGameState: (
       state,

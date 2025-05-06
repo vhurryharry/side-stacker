@@ -7,6 +7,7 @@ import {
   setWinner,
   initApiCall,
   setAvailableGames,
+  setDraw,
   makeMove as reduxMakeMove,
 } from '../reducers/gameSlice'
 import { BotDifficulty, GameMode } from '../utils/enums'
@@ -67,20 +68,33 @@ export const makeMove =
   (gameId: string, row: number, direction: 'L' | 'R') => async (dispatch: AppDispatch) => {
     dispatch(initApiCall())
     try {
+      dispatch(
+        reduxMakeMove({
+          row,
+          direction,
+        })
+      )
+
       const response = await api.post(`/game/${gameId}/move/`, {
         row,
         direction,
       })
-      const { game, aiMove, winner } = response.data
+
+      const { game, isDraw, winner, aiMove } = response.data
       dispatch(setGameState(game))
       if (winner) {
         dispatch(setWinner(winner))
       }
+      if (isDraw) {
+        dispatch(setDraw())
+      }
+
       if (aiMove) {
         dispatch(
           reduxMakeMove({
             row: aiMove.row,
             direction: aiMove.direction,
+            turn: -1,
           })
         )
       }

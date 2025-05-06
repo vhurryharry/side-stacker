@@ -25,7 +25,8 @@ def create_game(request):
         player2="AI" if mode != GameMode.PVP else "",
         mode=mode,
         bot_difficulty=difficulty,
-        current_turn=1
+        current_turn=1,
+        status=GameStatus.WAITING if mode == GameMode.PVP else GameStatus.IN_PROGRESS,
     )
     game.save()
 
@@ -128,7 +129,7 @@ def make_move(request, game_id):
                 "message": {
                     "type": "move",
                     "row": row,
-                    "side": direction,
+                    "direction": direction,
                     "board": board,
                     "currentTurn": game.current_turn,
                     "winner": winner if winner else None,
@@ -138,19 +139,21 @@ def make_move(request, game_id):
         )
 
     ai_move = None
-    if game.status != GameStatus.FINISHED:
+    if game.status != GameStatus.FINISHED and game.mode != GameMode.PVP:
         # If it's bot's turn (PvB or BvB), let the bot play
         if game.mode == GameMode.PVB and game.current_turn == -1:  # Player vs Bot, Bot's turn
-            ai_move = get_ai_move(board, difficulty=game.bot_difficulty)  # Bot's move
+            ai_move = get_ai_move(board, game.bot_difficulty, game.current_turn)  # Bot's move
             game.apply_move(ai_move[0], ai_move[1], game.current_turn)
         elif game.mode == GameMode.BVB:  # Bot vs Bot, both players are bots
-            ai_move = get_ai_move(board, difficulty=BotDifficulty.HARD)  # You can modify difficulty for BvB
+            ai_move = get_ai_move(board, BotDifficulty.HARD, game.current_turn)  # You can modify difficulty for BvB
             game.apply_move(ai_move[0], ai_move[1], game.current_turn)
         
         board = game.get_board()
         winner = check_winner(board)
+        print(f"AI Move: {ai_move}, Board after AI move: {board}")
         is_draw = len(get_valid_moves(board)) == 0
-        
+        game.current_turn = -game.current_turn
+
         if winner or is_draw:
             game.status = GameStatus.FINISHED
 
@@ -161,7 +164,7 @@ def make_move(request, game_id):
         "game": game.serialize(),
         "aiMove": {
             "row": ai_move[0],
-            "side": ai_move[1],
+            "direction": ai_move[1],
         } if ai_move else None,
         "winner": winner if winner else None,
         "isDraw": is_draw,

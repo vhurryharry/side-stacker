@@ -42,6 +42,7 @@ const Game: React.FC = () => {
 
   const wsHandler = (data: any) => {
     console.log('websocket received', data)
+
     if (data.type === 'player_join') {
       dispatch(
         joinGame({
@@ -49,13 +50,15 @@ const Game: React.FC = () => {
         })
       )
     } else if (data.type === 'move') {
-      const { row, side, winner, isDraw } = data
-      dispatch(
-        reduxMakeMove({
-          row,
-          direction: side,
-        })
-      )
+      const { row, direction, winner, isDraw, currentTurn: moveTurn } = data
+      if (moveTurn === myTurn) {
+        dispatch(
+          reduxMakeMove({
+            row,
+            direction,
+          })
+        )
+      }
 
       if (winner) {
         dispatch(setWinner(winner))
@@ -68,7 +71,7 @@ const Game: React.FC = () => {
 
   useEffect(() => {
     if (id) {
-      if (!isSocketConnected()) {
+      if (mode === GameMode.PVP && !isSocketConnected()) {
         connectWebSocket(id)
 
         subscribeToMessages(wsHandler)
@@ -99,9 +102,10 @@ const Game: React.FC = () => {
           : mode === GameMode.PVB
             ? 'Player vs Bot'
             : 'Bot vs Bot'}
+        {mode === GameMode.PVB && ` (${botDifficulty})`}
       </span>
 
-      <div className="flex flex-row items-center justify-around w-1/2">
+      <div className="flex flex-row items-center justify-around w-1/2 mt-4">
         <span className={`text-xl ${currentTurn === 1 && 'font-bold'}`}>Player 1: {player1}</span>
         <span className={`text-xl ${currentTurn === -1 && 'font-bold'}`}>Player 2: {player2}</span>
       </div>
@@ -114,7 +118,8 @@ const Game: React.FC = () => {
       )}
       {winner && (
         <div className="mt-4 text-2xl font-bold">
-          {winner && `Winner: ${winner === 1 ? player1 : player2}`}
+          {winner &&
+            `${winner === 1 ? 'Player 1 (' + player1 + ')' : 'Player 2 (' + player2 + ')'} won!`}
         </div>
       )}
       {isDraw && <div className="mt-4 text-2xl font-bold">It's a draw!</div>}

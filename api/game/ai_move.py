@@ -36,9 +36,9 @@ def get_hard_ai_move(board: list[list[int]], player: int) -> tuple[int, str]:
     q_values = model(state_tensor).detach().numpy().squeeze()
 
     move_scores = {}
-    for row, side in valid_moves:
-        idx = row * 2 + (0 if side == 'L' else 1)
-        move_scores[(row, side)] = q_values[idx]
+    for row, direction in valid_moves:
+        idx = row * 2 + (0 if direction == 'L' else 1)
+        move_scores[(row, direction)] = q_values[idx]
 
     best_move = max(move_scores, key=move_scores.get)
     return best_move

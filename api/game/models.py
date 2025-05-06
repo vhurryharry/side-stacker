@@ -35,7 +35,7 @@ class Game(models.Model):
             "createdAt": self.created_at.isoformat(),
         }
     
-    def apply_move(self, row: int, side: str, current_turn: int):
+    def apply_move(self, row: int, direction: str, current_turn: int):
         if current_turn == 1:
             player_name = getattr(self, "player1", "Player 1")
             player_type = "human" if self.mode != "bvb" else "bot"
@@ -47,7 +47,7 @@ class Game(models.Model):
             player_name=player_name,
             player_type=player_type,
             row=row,
-            side=side
+            direction=direction
         )
 
     def get_board(self):
@@ -56,12 +56,12 @@ class Game(models.Model):
         
         for i, move in enumerate(moves):
             symbol = 1 if i % 2 == 0 else -1
-            if move.side == 'L':
+            if move.direction == 'L':
                 for col in range(BOARD_SIZE):
                     if board[move.row][col] == 0:
                         board[move.row][col] = symbol
                         break
-            elif move.side == 'R':
+            elif move.direction == 'R':
                 for col in reversed(range(BOARD_SIZE)):
                     if board[move.row][col] == 0:
                         board[move.row][col] = symbol
@@ -74,14 +74,14 @@ class Move(models.Model):
     player_name = models.CharField(max_length=100)
     player_type = models.CharField(max_length=10, choices=[('human', 'Human'), ('bot', 'Bot')], default='human')
     row = models.IntegerField()
-    side = models.CharField(max_length=1, choices=[('L', 'Left'), ('R', 'Right')])
+    direction = models.CharField(max_length=1, choices=[('L', 'Left'), ('R', 'Right')])
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['created_at']
 
     def __str__(self):
-        return f"Move by {self.player_name} at row {self.row} side {self.side}"
+        return f"Move by {self.player_name} at row {self.row} direction {self.direction}"
 
 
 class SideStackerModel(nn.Module):
