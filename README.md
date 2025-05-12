@@ -46,3 +46,27 @@ The implementation includes an AI bot that integrates with the game so players c
 - AI Bot vs AI Bot
 
 The game is stored in the backend using a relational database.
+
+## Project Setup
+
+### API
+
+- Python
+- Django Rest Framework
+- SQLite3
+- PyTorch/Numpy
+
+```
+daphne backend.asgi:application
+```
+
+### APP
+
+- Typescript
+- React.js
+- Vite
+- Websocket
+
+```
+yarn dev
+```

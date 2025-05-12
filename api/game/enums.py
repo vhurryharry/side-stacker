@@ -1,6 +1,5 @@
 from django.db.models import TextChoices
 
-
 class GameStatus(TextChoices):
     WAITING = 'waiting', 'Waiting'
     IN_PROGRESS = 'in_progress', 'In Progress'

@@ -1,9 +1,10 @@
 from django.db import models
 import uuid
-import torch
-import torch.nn as nn
+
+from .game_utils import check_winner, get_valid_moves
 from .enums import GameStatus, GameMode, BotDifficulty
-from .constants import BOARD_SIZE, NUM_ACTIONS
+from .constants import BOARD_SIZE
+from channels.db import database_sync_to_async
 
 
 class Game(models.Model):
@@ -35,7 +36,7 @@ class Game(models.Model):
             "createdAt": self.created_at.isoformat(),
         }
     
-    def apply_move(self, row: int, direction: str, current_turn: int):
+    async def apply_move(self, row: int, direction: str, current_turn: int):
         if current_turn == 1:
             player_name = getattr(self, "player1", "Player 1")
             player_type = "human" if self.mode != "bvb" else "bot"
@@ -43,16 +44,28 @@ class Game(models.Model):
             player_name = getattr(self, "player2", "Player 2")
             player_type = "bot" if self.mode in ["pvb", "bvb"] else "human"
 
-        self.moves.create(
+        await database_sync_to_async(self.moves.create)(
             player_name=player_name,
             player_type=player_type,
             row=row,
             direction=direction
         )
 
-    def get_board(self):
+        board = await self.get_board()
+        winner = check_winner(board)
+        is_draw = len(get_valid_moves(board)) == 0
+        if winner or is_draw:
+            self.status = GameStatus.FINISHED
+        else:
+            # Switch turn
+            self.current_turn = -self.current_turn
+        
+        await database_sync_to_async(self.save)()
+        return board, winner, is_draw
+
+    async def get_board(self):
         board = [[0 for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
-        moves = list(self.moves.all())
+        moves = await database_sync_to_async(lambda: list(self.moves.all()))()
         
         for i, move in enumerate(moves):
             symbol = 1 if i % 2 == 0 else -1

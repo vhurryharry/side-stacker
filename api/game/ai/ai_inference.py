@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from .model import SideStackerNet
-from ..game_utils import get_valid_moves
+from ..game_utils import get_valid_moves, check_winner, apply_move
 from ..constants import BOARD_SIZE
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -18,28 +18,48 @@ def board_to_tensor(board, player):
     tensor = torch.tensor([p1, p2], dtype=torch.float32).unsqueeze(0)
     return tensor.to(device)
 
+
+def is_safe_move(board, move, player, depth=2):
+    opponent = -player
+    test_board = apply_move(board, move[0], move[1], player)
+
+    def opponent_can_win(b, p):
+        if check_winner(b) == p:
+            return True
+        for mv in get_valid_moves(b):
+            b2 = apply_move(b, mv[0], mv[1], p)
+            if check_winner(b2) == p:
+                return True
+        return False
+
+    queue = [(test_board, 0)]
+    while queue:
+        current_board, d = queue.pop(0)
+        if d >= depth:
+            continue
+        if opponent_can_win(current_board, opponent):
+            return False
+        for mv in get_valid_moves(current_board):
+            next_board = apply_move(current_board, mv[0], mv[1], opponent)
+            queue.append((next_board, d + 1))
+
+    return True
+
+# ✅ Use trained model to choose the best safe move
 def predict_move(board, player):
-    valid_moves = get_valid_moves(board)
-    state_tensor = board_to_tensor(board, player)
+    tensor_input = board_to_tensor(board, player)
     with torch.no_grad():
-        policy_logits, _ = model(state_tensor)
-        policy_probs = torch.softmax(policy_logits, dim=1).cpu().numpy()[0]  # shape: [14]
-    
-    move_map = [(row, dir) for row in range(BOARD_SIZE) for dir in ['L', 'R']]
-    legal_probs = []
-    legal_moves = []
+        policy_logits, _ = model(tensor_input)
+        policy = torch.softmax(policy_logits, dim=1).cpu().numpy()[0]
 
-    for i, move in enumerate(move_map):
-        if move in valid_moves:
-            legal_moves.append(move)
-            legal_probs.append(policy_probs[i])
-    
-    if not legal_moves:
-        return None
+    valid_moves = get_valid_moves(board)
+    safe_moves = [mv for mv in valid_moves if is_safe_move(board, mv, player)]
 
-    # Normalize probabilities among valid moves
-    total = sum(legal_probs)
-    norm_probs = [p / total for p in legal_probs]
-    chosen_index = np.argmax(norm_probs)  # or use random.choices(...) for exploration
+    if not safe_moves:
+        safe_moves = valid_moves  # fallback if no safe moves found
 
-    return legal_moves[chosen_index]
+    move_indices = {(r, d): i for i, (r, d) in enumerate([(r, s) for r in range(BOARD_SIZE) for s in ['L', 'R']])}
+    scored_moves = [(mv, policy[move_indices[mv]]) for mv in safe_moves]
+
+    best_move = max(scored_moves, key=lambda x: x[1])[0]
+    return best_move

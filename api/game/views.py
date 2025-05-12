@@ -1,8 +1,6 @@
 from django.http import JsonResponse 
 from rest_framework.decorators import api_view
 from .models import Game
-from .game_utils import get_valid_moves, check_winner
-from .ai_move import get_ai_move
 from .enums import GameMode, GameStatus, BotDifficulty
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -86,83 +84,3 @@ def get_game_state(request, game_id):
 
     return JsonResponse(game.serialize(), status=200)
 
-
-# Make a move
-@api_view(["POST"])
-def make_move(request, game_id):
-    try:
-        game = Game.objects.get(id=game_id)
-    except Game.DoesNotExist:
-        return JsonResponse({"error": "Game not found"}, status=404)
-
-    row = int(request.data.get('row'))
-    direction = request.data.get('direction')
-    board = game.get_board()
-
-    # Validate move
-    if (row, direction) not in get_valid_moves(board):
-        return JsonResponse({"error": "Invalid move"}, status=400)
-
-    # Apply the player's move (player 1 or player 2)
-    game.apply_move(row, direction, game.current_turn)
-    board = game.get_board()
-
-    winner = check_winner(board)
-    is_draw = len(get_valid_moves(board)) == 0
-    if winner or is_draw:
-        game.status = GameStatus.FINISHED
-    else:
-        # Switch turn
-        game.current_turn = -game.current_turn
-    game.save()
-
-    if game.mode == GameMode.PVP:
-        # Notify both players about the move
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f"game_{game_id}",
-            {
-                "type": "game_update",
-                "message": {
-                    "type": "move",
-                    "row": row,
-                    "direction": direction,
-                    "board": board,
-                    "currentTurn": game.current_turn,
-                    "winner": winner if winner else None,
-                    "isDraw": is_draw,
-                },
-            },
-        )
-
-    ai_move = None
-    if game.status != GameStatus.FINISHED and game.mode != GameMode.PVP:
-        # If it's bot's turn (PvB or BvB), let the bot play
-        if game.mode == GameMode.PVB and game.current_turn == -1:  # Player vs Bot, Bot's turn
-            ai_move = get_ai_move(board, game.bot_difficulty, game.current_turn)  # Bot's move
-            game.apply_move(ai_move[0], ai_move[1], game.current_turn)
-        elif game.mode == GameMode.BVB:  # Bot vs Bot, both players are bots
-            ai_move = get_ai_move(board, BotDifficulty.HARD, game.current_turn)  # You can modify difficulty for BvB
-            game.apply_move(ai_move[0], ai_move[1], game.current_turn)
-        
-        board = game.get_board()
-        winner = check_winner(board)
-        print(f"AI Move: {ai_move}, Board after AI move: {board}")
-        is_draw = len(get_valid_moves(board)) == 0
-        game.current_turn = -game.current_turn
-
-        if winner or is_draw:
-            game.status = GameStatus.FINISHED
-
-        game.save()
-
-    # Return the current board state if no one wins yet
-    return JsonResponse({
-        "game": game.serialize(),
-        "aiMove": {
-            "row": ai_move[0],
-            "direction": ai_move[1],
-        } if ai_move else None,
-        "winner": winner if winner else None,
-        "isDraw": is_draw,
-    })

@@ -6,19 +6,13 @@ import {
   connectWebSocket,
   disconnectWebSocket,
   isSocketConnected,
+  sendMessage,
   subscribeToMessages,
 } from '../utils/socket'
 import GameBoard from '../components/GameBoard'
-import { makeMove } from '../middlewares/gameMiddleware'
 import { GameMode, GameStatus } from '../utils/enums'
 import LoadingSpinner from '../components/LoadingSpinner'
-import {
-  joinGame,
-  setWinner,
-  makeMove as reduxMakeMove,
-  setDraw,
-  resetGame,
-} from '../reducers/gameSlice'
+import { joinGame, setWinner, makeMove, setDraw, resetGame } from '../reducers/gameSlice'
 import { isValidMove } from '../utils/utils'
 
 const Game: React.FC = () => {
@@ -50,15 +44,14 @@ const Game: React.FC = () => {
         })
       )
     } else if (data.type === 'move') {
-      const { row, direction, winner, isDraw, currentTurn: moveTurn } = data
-      if (moveTurn === myTurn) {
-        dispatch(
-          reduxMakeMove({
-            row,
-            direction,
-          })
-        )
-      }
+      const { row, direction, winner, isDraw, currentTurn: turn } = data
+      dispatch(
+        makeMove({
+          row,
+          direction,
+          turn,
+        })
+      )
 
       if (winner) {
         dispatch(setWinner(winner))
@@ -71,7 +64,7 @@ const Game: React.FC = () => {
 
   useEffect(() => {
     if (id) {
-      if (mode === GameMode.PVP && !isSocketConnected()) {
+      if (!isSocketConnected()) {
         connectWebSocket(id)
 
         subscribeToMessages(wsHandler)
@@ -84,7 +77,14 @@ const Game: React.FC = () => {
   const onCellClick = (row: number, col: number) => {
     const { valid, direction } = isValidMove(row, col, board)
     if (valid && direction) {
-      dispatch(makeMove(id, row, direction))
+      sendMessage({
+        id,
+        message: {
+          row,
+          direction,
+          turn: myTurn,
+        },
+      })
     }
   }
 
