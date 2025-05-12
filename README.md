@@ -70,3 +70,12 @@ daphne backend.asgi:application
 ```
 yarn dev
 ```
+
+## Possible Enhancements
+
+- User authentication
+- Save/restore game
+- Pause game
+- Adjust speed for Bot vs Bot mode
+- Show last move
+- Undo moves
