@@ -57,24 +57,12 @@ class GameConsumer(AsyncWebsocketConsumer):
             await self.send_game_update(game_id, row, direction, board, game.current_turn, winner, is_draw)
 
         # Handle AI Move
-        if game.status != GameStatus.FINISHED and game.mode is GameMode.PVB:
+        if game.status != GameStatus.FINISHED and game.mode in [GameMode.PVB, GameMode.BVB]:
+            board = await game.get_board()
             ai_move = get_ai_move(board, game.bot_difficulty, game.current_turn)
             row, direction = ai_move
             board, winner, is_draw = await game.apply_move(row, direction, game.current_turn)
             await self.send_game_update(game_id, row, direction, board, game.current_turn, winner, is_draw)
-
-        if game.mode == GameMode.BVB and game.status != GameStatus.FINISHED:
-            for _ in range(2):  # Run one full round (2 bot turns)
-                ai_move = get_ai_move(board, game.bot_difficulty, game.current_turn)
-                row, direction = ai_move
-                board, winner, is_draw = await game.apply_move(row, direction, game.current_turn)
-
-                await self.send_game_update(
-                    game_id, row, direction, board, game.current_turn, winner, is_draw
-                )
-
-                if game.status == GameStatus.FINISHED:
-                    break  # Stop if game ended after first move
 
     async def send_game_update(self, game_id, row, direction, board, current_turn, winner, is_draw):
         await self.channel_layer.group_send(

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { AppDispatch, RootState } from '../store'
 import { useNavigate } from 'react-router-dom'
@@ -19,8 +19,6 @@ const Game: React.FC = () => {
   const navigate = useNavigate()
   const {
     id,
-    loading,
-    error,
     player1,
     player2,
     currentTurn,
@@ -33,6 +31,9 @@ const Game: React.FC = () => {
     isDraw,
   } = useSelector((state: RootState) => state.game)
   const dispatch = useDispatch<AppDispatch>()
+  const [aiTrigger, setAiTrigger] = useState<number>()
+  // Double useEffect guard in React dev mode
+  const ranOnce = useRef(false)
 
   const wsHandler = (data: any) => {
     console.log('websocket received', data)
@@ -53,6 +54,10 @@ const Game: React.FC = () => {
         })
       )
 
+      if (winner || isDraw) {
+        clearInterval(aiTrigger)
+      }
+
       if (winner) {
         dispatch(setWinner(winner))
       }
@@ -62,15 +67,32 @@ const Game: React.FC = () => {
     }
   }
 
-  useEffect(() => {
-    if (id) {
-      if (!isSocketConnected()) {
-        connectWebSocket(id)
+  const triggerAIMove = () => {
+    sendMessage({
+      id,
+      message: {
+        turn: myTurn,
+      },
+    })
+  }
 
-        subscribeToMessages(wsHandler)
+  useEffect(() => {
+    if (!ranOnce.current) {
+      ranOnce.current = true
+
+      if (id) {
+        if (!isSocketConnected()) {
+          connectWebSocket(id)
+
+          subscribeToMessages(wsHandler)
+
+          if (mode === GameMode.BVB && !aiTrigger) {
+            setAiTrigger(setInterval(triggerAIMove, 1000))
+          }
+        }
+      } else {
+        navigate('/')
       }
-    } else {
-      navigate('/')
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -91,6 +113,7 @@ const Game: React.FC = () => {
   const closeGame = () => {
     disconnectWebSocket()
     dispatch(resetGame())
+    clearInterval(aiTrigger)
     navigate('/')
   }
 

@@ -83,7 +83,7 @@ const gameSlice = createSlice({
         }
       }
 
-      state.board = board
+      state.board = [...board]
       state.moveHistory.push({ row, direction, player: state.currentTurn })
       state.currentTurn = turn ? -turn : -state.currentTurn
     },
@@ -99,7 +99,7 @@ const gameSlice = createSlice({
         player1: string | null
         player2: string | null
         moveHistory: GameMove[]
-        myTurn?: number
+        myTurn: number
       }>
     ) => {
       state.id = action.payload.id
@@ -111,7 +111,7 @@ const gameSlice = createSlice({
       state.player1 = action.payload.player1
       state.player2 = action.payload.player2
       state.moveHistory = action.payload.moveHistory || state.moveHistory
-      state.myTurn = action.payload.myTurn || state.myTurn
+      state.myTurn = action.payload.myTurn
     },
     setWinner: (state, action: PayloadAction<number>) => {
       state.winner = action.payload

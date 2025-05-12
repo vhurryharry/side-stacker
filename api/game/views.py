@@ -16,7 +16,7 @@ def create_game(request):
         return JsonResponse({"error": "Invalid game mode"}, status=400)
 
     game = Game(
-        player1=player1,
+        player1="AI" if mode == GameMode.BVB else player1,
         player2="AI" if mode != GameMode.PVP else "",
         mode=mode,
         bot_difficulty=difficulty,

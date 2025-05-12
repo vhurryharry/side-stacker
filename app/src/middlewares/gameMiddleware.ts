@@ -31,7 +31,7 @@ export const createGame =
       dispatch(
         setGameState({
           ...response.data,
-          myTurn: 1,
+          myTurn: gameMode === GameMode.BVB ? 0 : 1,
         })
       )
     } catch (error) {

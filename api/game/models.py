@@ -56,9 +56,7 @@ class Game(models.Model):
         is_draw = len(get_valid_moves(board)) == 0
         if winner or is_draw:
             self.status = GameStatus.FINISHED
-        else:
-            # Switch turn
-            self.current_turn = -self.current_turn
+        self.current_turn = -self.current_turn
         
         await database_sync_to_async(self.save)()
         return board, winner, is_draw
