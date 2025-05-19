@@ -53,11 +53,11 @@ class TestGameModelAsync:
     async def test_apply_move_and_get_board(self):
         board, winner, is_draw = await self.game.apply_move(0, 'L', 1)
         assert board[0][0] == 1
-        assert winner is None
+        assert winner is 0
         assert not is_draw
         board, winner, is_draw = await self.game.apply_move(0, 'R', -1)
         assert board[0][-1] == -1
-        assert winner is None
+        assert winner is 0
         assert not is_draw
 
 class MoveModelTestCase(TestCase):
