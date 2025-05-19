@@ -57,6 +57,8 @@ The game is stored in the backend using a relational database.
 - PyTorch/Numpy
 
 ```
+pip install
+
 daphne backend.asgi:application
 ```
 
@@ -68,6 +70,7 @@ daphne backend.asgi:application
 - Websocket
 
 ```
+yarn
 yarn dev
 ```
 
