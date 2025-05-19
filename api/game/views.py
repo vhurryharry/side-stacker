@@ -78,7 +78,7 @@ def list_available_games(request):
 @api_view(["GET"])
 def get_game_state(request, game_id):
     try:
-        game = Game.objects.get(game_id=game_id)
+        game = Game.objects.get(id=game_id)
     except Game.DoesNotExist:
         return JsonResponse({"error": "Game not found"}, status=404)
 

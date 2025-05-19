@@ -27,6 +27,7 @@ httpx==0.28.1
 hyperlink==21.0.0
 idna==3.10
 incremental==24.7.2
+iniconfig==2.1.0
 Jinja2==3.1.6
 Markdown==3.7
 MarkupSafe==3.0.2
@@ -37,6 +38,7 @@ numpy==2.2.3
 packaging==24.2
 pandas==2.2.3
 plotly==5.24.1
+pluggy==1.6.0
 preswald==0.1.42
 pyasn1==0.6.1
 pyasn1_modules==0.4.2
@@ -44,6 +46,9 @@ pycparser==2.22
 pydantic==2.10.6
 pydantic_core==2.27.2
 pyOpenSSL==25.0.0
+pytest==8.3.5
+pytest-asyncio==0.26.0
+pytest-django==4.11.1
 python-dateutil==2.9.0.post0
 python-multipart==0.0.20
 pytz==2025.1
