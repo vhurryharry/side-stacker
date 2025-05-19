@@ -31,7 +31,7 @@ const Game: React.FC = () => {
     isDraw,
   } = useSelector((state: RootState) => state.game)
   const dispatch = useDispatch<AppDispatch>()
-  const [aiTrigger, setAiTrigger] = useState<number>()
+  const [aiTrigger, setAiTrigger] = useState<NodeJS.Timeout>()
   // Double useEffect guard in React dev mode
   const ranOnce = useRef(false)
 
