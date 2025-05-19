@@ -56,12 +56,6 @@ The game is stored in the backend using a relational database.
 - SQLite3
 - PyTorch/Numpy
 
-```
-pip install
-
-daphne backend.asgi:application
-```
-
 ### APP
 
 - Typescript
@@ -69,9 +63,24 @@ daphne backend.asgi:application
 - Vite
 - Websocket
 
+The project is dockerized, so you can just run the app using the below command.
+
 ```
-yarn
-yarn dev
+docker compose up --build
+```
+
+Then you can access the app at http://localhost:3000
+
+If you want to run the project without docker, follow these steps.
+
+```
+cd api
+pip install -r requirements.txt
+daphne backend.asgi:application
+
+cd app
+npm install
+npm run dev
 ```
 
 ## Possible Enhancements
